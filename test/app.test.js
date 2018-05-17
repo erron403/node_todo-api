@@ -1,5 +1,5 @@
+require('../config/config')
 const request = require('supertest');
-
 const app = require('../app');
 const {ObjectId} = require('mongoose').Types;
 const {Todo} = require('../models/todo');

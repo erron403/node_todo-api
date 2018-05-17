@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const dburl = process.env.MONGODB_URL || 'mongodb://localhost:27017/TodoApp';
+const dburl = process.env.MONGODB_URL;
 
 mongoose.Promise = global.Promise;
 mongoose.connect(dburl).then(() => {}, (err) => {

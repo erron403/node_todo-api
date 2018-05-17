@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node server.js",
-    "test": "jest test/*.test.js --watchAll"
+    "test": "export NODE_ENV=test; jest --watchAll test/*.test.js"
   },
   "keywords": [
     "todo"
