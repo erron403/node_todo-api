@@ -1,7 +1,9 @@
 const mongoose = require('mongoose'),
       validator = require('validator'),
       jwt = require('jsonwebtoken'),
-      _ = require('lodash');
+      _ = require('lodash'),
+      bcrypt = require('bcryptjs');
+
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -38,18 +40,22 @@ const userSchema = new mongoose.Schema({
    }]
 });
 
+// this is user instanse method for send only specific field in response
 userSchema.methods.toJSON = function() {
   let user = this;
+  // toObject method covert mongoose object to regular object.
   let userObject = user.toObject();
 
   return _.pick(userObject, ['_id', 'username', 'email']);
 };
 
+// this is user instanse method for generateAuthToken
 userSchema.methods.generateAuthToken = function() {
   let user = this;
   let access = 'auth';
   let token = jwt
-              .sign({id: user._id.toHexString(), access}, 'owee98qu9816JH#@asfs!sojfsoad')
+              .sign({_id: user._id, access},
+              'owee98qu9816JH#@asfs!sojfsoad')
               .toString();
 
   user.tokens.push({access, token});
@@ -58,6 +64,42 @@ userSchema.methods.generateAuthToken = function() {
     return token;
   });
 };
+
+// User model method
+userSchema.statics.findByToken = function(token) {
+  let User = this;
+  // store the jwt decode value and it not defined for catch error
+  // if jwt throw error
+  let decoded;
+
+  try{
+    decoded = jwt.verify(token, 'owee98qu9816JH#@asfs!sojfsoad');
+  } catch (e){
+    return Promise.reject();
+  }
+  return User.findOne({
+    '_id': decoded._id,
+    'tokens.token': token,
+    'tokens.access': 'auth'
+  });
+};
+
+// Middleware (also called pre and post hooks) are functions
+// which are passed control during execution of asynchronous functions.
+userSchema.pre('save', function(next) {
+    let user = this;
+
+    if (user.isModified('password')){
+      bcrypt.genSalt(10, function(err, salt){
+        bcrypt.hash(user.password, salt, function(err, hash) {
+            user.password = hash;
+            next()
+        });
+      });
+    } else {
+      next()
+    }
+});
 
 const User = mongoose.model('User', userSchema);
 

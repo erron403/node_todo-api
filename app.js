@@ -15,5 +15,4 @@ app.use(bodyParser.json());
 app.use('/todo', todoRoute);
 app.use('/user', userRoute);
 
-
 module.exports = app;
