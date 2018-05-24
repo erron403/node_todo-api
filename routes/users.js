@@ -14,12 +14,12 @@ router.post('/', (req, res) => {
 // when user created we generateAuthToken and then send user id and Email
 // And token in header with name x-auth
 // custom header name start with 'x-' here we define custom header 'x-auth'
-    user.save().then(() => {
+    user.save().then((err) => {
       return user.generateAuthToken();
     }).then((token) => {
       res.header('x-auth', token).send(user);
     }).catch((e) => {
-      res.status(400).send(e);
+      res.status(400).send();
     });
 });
 
@@ -35,6 +35,16 @@ router.post('/login', (req, res) => {
   }).catch((e) => {
     res.status(400).send();
   });
+});
+
+//user token remove
+router.delete('/me/token', authenticate, (req, res) => {
+    req.user.removeToken(req.token).then(() => {
+      res.status(200).send();
+    },
+      (e) => {
+        res.status(400).send();
+    });
 });
 
 // test route
