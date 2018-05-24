@@ -223,7 +223,7 @@ describe('PATCH /todo/:id', () => {
             expect(user_fdb).toBeDefined();
             expect(user_fdb.password).not.toBe(user.password);
             done();
-          });
+          }).catch((e) => done(e));
         });
     });
 
@@ -253,5 +253,55 @@ describe('PATCH /todo/:id', () => {
          .expect(400)
          .end(done);
        });
+  });
+
+  describe('POST /user/login', () => {
+    it('it should be return auth token if email and password correct', (done) => {
+      request(app)
+      .post('/user/login')
+      .send({
+        email: user_mock[1].email,
+        password: user_mock[1].password
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.headers['x-auth']).toBeDefined();
+      }).end((err, res) => {
+        if (err){
+          return done(err);
+        }
+
+        User.findById(user_mock[1]._id).then((user) => {
+          expect(user.tokens[0]).toMatchObject({
+            access: 'auth',
+            token: res.headers['x-auth']
+          });
+          done();
+        }).catch((e) => done(e));
+      });
+    });
+
+    it('should be return 400 if user credential not correct', (done) => {
+        request(app)
+        .post('/user/login')
+        .send({
+          email: user_mock[1].email,
+          password: 'pass54321!'
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.headers['x-auth']).toBeUndefined();
+        })
+        .end((err, res) => {
+          if (err){
+            return done(err);
+          }
+
+          User.findById(user_mock[1]._id).then((user) => {
+            expect(user.tokens.length).toBe(0);
+            done();
+          }).catch((e) => done(e));
+        });
+    });
   });
 });
