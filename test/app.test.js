@@ -4,25 +4,13 @@ const app = require('../app');
 const {ObjectId} = require('mongoose').Types;
 const {Todo} = require('../models/todo');
 const {User} = require('../models/user');
+const {todo_mock, populateTodo, user_mock, populateUser} = require('./seed/seed');
 
-const todo_mock = [{
-  _id: new ObjectId,
-  content: "Learn Nodejs"
-  },
-  {
-    _id: new ObjectId,
-    content: "Learn Python",
-    complete: false,
-    completeAt: 1234
-  }
-]
 // beforeEach function help to run any function before start test.
 // Here we remove all todo in db, Before run test.
-beforeEach((done) => {
-  Todo.remove({}).then(() => {
-    return Todo.insertMany(todo_mock);
-  }).then(() => done());
-});
+beforeEach(populateUser);
+beforeEach(populateTodo);
+
 
 describe('POST /todo', () => {
   it('Should create a new todo', (done) => {
@@ -154,7 +142,7 @@ describe("DELETE /todo/:id", () => {
   });
 });
 
-describe('#PATCH /todo/:id', () => {
+describe('PATCH /todo/:id', () => {
     let content = "Some crtical task";
     let complete = true;
 
@@ -184,4 +172,86 @@ describe('#PATCH /todo/:id', () => {
             })
             .end(done);
     });
+
+  describe("GET /user/me", () => {
+    it('it should be return user if authenticated', (done) => {
+        request(app)
+        .get('/user/me')
+        .set('x-auth', user_mock[0].tokens[0].token)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body._id).toBe(user_mock[0]._id.toHexString());
+          expect(res.body.email).toBe(user_mock[0].email);
+        })
+        .end(done);
+    });
+
+    it('it should retun 401 if not authenticated', (done) => {
+        request(app)
+        .get('/user/me')
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toEqual({});
+        })
+        .end(done);
+    });
+  });
+
+  describe("POST /user", () => {
+    it('it should create a user', (done) => {
+      let user = {
+        username: "Sam",
+        email: "sam@example.com",
+        password: "pass31234!"
+      };
+
+        request(app)
+        .post('/user')
+        .send(user)
+        .expect(200)
+        .expect((res) => {
+          expect(res.headers['x-auth']).toBeDefined();
+          expect(res.body._id).toBeDefined();
+          expect(res.body.email).toBe(user.email);
+          expect(res.body.username).toBe(user.username);
+        }).end((err) => {
+          if (err){
+            return done(err);
+          }
+
+          User.findOne({email: user.email}).then((user_fdb) => {
+            expect(user_fdb).toBeDefined();
+            expect(user_fdb.password).not.toBe(user.password);
+            done();
+          });
+        });
+    });
+
+      it('it should return Validation error if request invalid', (done) => {
+        let user = {
+          username: "jam",
+          email: "jam@example.com",
+          password: "pass!"
+          };
+
+          request(app)
+          .post('/user')
+          .send(user)
+          .expect(400)
+          .end(done);
+      });
+
+       it('it should not create if email in use', (done) => {
+
+         request(app)
+         .post('/user')
+         .send({
+           username:user_mock[0].username,
+           email: user_mock[0].email,
+           password: 'passwd124!'
+         })
+         .expect(400)
+         .end(done);
+       });
+  });
 });

@@ -27,4 +27,5 @@ router.post('/', (req, res) => {
 router.get('/me', authenticate, (req, res) => {
   res.send(req.user);
 });
+
 module.exports = router;
