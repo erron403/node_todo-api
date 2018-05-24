@@ -84,6 +84,26 @@ userSchema.statics.findByToken = function(token) {
   });
 };
 
+// User model method for user login authentication
+userSchema.statics.findByCred = function(email, password) {
+  let User = this;
+
+  return User.findOne({email}).then((user) => {
+    if (!user){
+      return Promise.reject();
+    }
+
+    return bcrypt.compare(password, user.password)
+          .then((res) => {
+              if (res){
+                return user;
+                } else {
+                  return Promise.reject();
+              }
+          });
+     });
+};
+
 // Middleware (also called pre and post hooks) are functions
 // which are passed control during execution of asynchronous functions.
 userSchema.pre('save', function(next) {
