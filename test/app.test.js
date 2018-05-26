@@ -11,7 +11,6 @@ const {todo_mock, populateTodo, user_mock, populateUser} = require('./seed/seed'
 beforeEach(populateUser);
 beforeEach(populateTodo);
 
-
 describe('POST /todo', () => {
   it('Should create a new todo', (done) => {
     let content = 'Test todo text';

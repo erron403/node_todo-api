@@ -13,7 +13,7 @@ const user_mock = [{
   password: 'passjohn123',
   tokens: [{
     access: 'auth',
-    token: jwt.sign({_id: userOneId, access: 'auth'}, 'owee98qu9816JH#@asfs!sojfsoad').toString()
+    token: jwt.sign({_id: userOneId, access: 'auth'}, process.env.JWT_SECRET).toString()
   }]
 },
 {
@@ -23,7 +23,7 @@ const user_mock = [{
   password: "passbob123",
   tokens: [{
     access: 'auth',
-    token: jwt.sign({_id: userTwoId, access: 'auth'}, 'owee98qu9816JH#@asfs!sojfsoad').toString()
+    token: jwt.sign({_id: userTwoId, access: 'auth'}, process.env.JWT_SECRET).toString()
   }]
 }];
 
