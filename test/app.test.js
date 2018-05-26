@@ -128,7 +128,7 @@ describe("DELETE /todo/:id", () => {
 
           Todo.findById(todo_mock[1]._id).then((todo) => {
               expect(404);
-              expect(todo).toBeNull();
+              expect(todo).toBeFalsy();
               done()
           }).catch((e) => done(e));
       });
@@ -144,7 +144,7 @@ describe("DELETE /todo/:id", () => {
             return done(err);
           }
           Todo.findById(todo_mock[1]._id).then((todo) => {
-              expect(todo).toBeDefined();
+              expect(todo).toBeTruthy();
               done()
           }).catch((e) => done(e));
       });
@@ -255,8 +255,8 @@ describe('PATCH /todo/:id', () => {
         .send(user)
         .expect(200)
         .expect((res) => {
-          expect(res.headers['x-auth']).toBeDefined();
-          expect(res.body._id).toBeDefined();
+          expect(res.headers['x-auth']).toBeTruthy();
+          expect(res.body._id).toBeTruthy();
           expect(res.body.email).toBe(user.email);
           expect(res.body.username).toBe(user.username);
         }).end((err) => {
@@ -265,7 +265,7 @@ describe('PATCH /todo/:id', () => {
           }
 
           User.findOne({email: user.email}).then((user_fdb) => {
-            expect(user_fdb).toBeDefined();
+            expect(user_fdb).toBeTruthy();
             expect(user_fdb.password).not.toBe(user.password);
             done();
           }).catch((e) => done(e));
@@ -310,7 +310,7 @@ describe('PATCH /todo/:id', () => {
       })
       .expect(200)
       .expect((res) => {
-        expect(res.headers['x-auth']).toBeDefined();
+        expect(res.headers['x-auth']).toBeTruthy();
       }).end((err, res) => {
         if (err){
           return done(err);
@@ -335,7 +335,7 @@ describe('PATCH /todo/:id', () => {
         })
         .expect(400)
         .expect((res) => {
-          expect(res.headers['x-auth']).toBeUndefined();
+          expect(res.headers['x-auth']).toBeFalsy();
         })
         .end((err, res) => {
           if (err){
