@@ -3,15 +3,18 @@ const express = require('express'),
       _ = require('lodash');
 
 const {mongoose, idValidator} = require('../db/mongoose'),
+      { authenticate } = require('../middleware/authenticate'),
         {Todo} = require('../models/todo');
 
 
-router.post('/', (req, res) => {
-  let content = req.body.content;
-  let complete = req.body.complete;
-  let completeAt = req.body.completeAt;
-
-  let newTodo = new Todo({content, complete, completeAt});
+// todo create route
+router.post('/', authenticate, (req, res) => {
+  let newTodo = new Todo({
+    content: req.body.content,
+    complete: req.body.complete,
+    completeAt: req.body.completeAt,
+    _creator: req.user._id
+  });
   newTodo.save().then((doc) => {
     res.send(doc);
   }, (e) => {
@@ -19,22 +22,26 @@ router.post('/', (req, res) => {
   });
 });
 
-router.get('/', (req, res) => {
-  Todo.find().then((todo) => {
+// show all todo route
+router.get('/', authenticate, (req, res) => {
+  Todo.find({_creator: req.user._id}).then((todo) => {
     res.send({todos: todo});
   }, (err) => {
     res.status(400).send(e);
   });
 });
 
-router.get('/:id', (req, res) => {
+// show specific todo route
+router.get('/:id', authenticate, (req, res) => {
     let id = req.params.id;
 
     if (!idValidator(id)){
       return res.status(404).send({message: "Invalid ID"});
     }
 
-    Todo.findById(id).then((todo) => {
+    Todo.findOne({
+      _id: id,
+      _creator: req.user._id}).then((todo) => {
       if (!todo){
          return res.status(404).send({message: "todo not exists"});
       }
@@ -42,14 +49,16 @@ router.get('/:id', (req, res) => {
     });
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', authenticate, (req, res) => {
     let id = req.params.id
 
     if (!idValidator(id)){
       return res.status(404).send({message: "Invalid ID"});
     }
 
-    Todo.findByIdAndRemove(id).then((todo) => {
+    Todo.findOneAndRemove({
+      _id: id,
+      _creator: req.user._id}).then((todo) => {
        if (!todo){
          return res.status(404).send({message: "todo not exists"});
        }
@@ -57,7 +66,7 @@ router.delete('/:id', (req, res) => {
     }).catch((e) => res.status(400).send(e));
 });
 
-router.patch('/:id', (req, res) => {
+router.patch('/:id', authenticate, (req, res) => {
     let id = req.params.id;
     let body = _.pick(req.body, ['content', 'complete'])
 
@@ -72,7 +81,7 @@ router.patch('/:id', (req, res) => {
       body.completeAt = null;
     }
 
-    Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
+    Todo.findOneAndUpdate({_id: id, _creator: req.user._id}, {$set: body}, {new: true}).then((todo) => {
         if (!todo){
           return res.status(404).send({message: "todo not exists"});
         }

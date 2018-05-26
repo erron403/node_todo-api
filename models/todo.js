@@ -14,6 +14,10 @@ const todoSchema = new mongoose.Schema({
     completeAt: {
       type: Number,
       default: null,
+    },
+    _creator: {
+      type: String,
+      required: true
     }
 });
 

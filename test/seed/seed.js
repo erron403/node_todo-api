@@ -21,17 +21,23 @@ const user_mock = [{
   username: "Bob",
   email: "bob@example.com",
   password: "passbob123",
+  tokens: [{
+    access: 'auth',
+    token: jwt.sign({_id: userTwoId, access: 'auth'}, 'owee98qu9816JH#@asfs!sojfsoad').toString()
+  }]
 }];
 
 const todo_mock = [{
   _id: new ObjectId,
-  content: "Learn Nodejs"
+  content: "Learn Nodejs",
+  _creator: userOneId
   },
   {
     _id: new ObjectId,
     content: "Learn Python",
     complete: false,
-    completeAt: 1234
+    completeAt: 1234,
+    _creator: userTwoId
   }];
 
 const populateTodo = (done) => {

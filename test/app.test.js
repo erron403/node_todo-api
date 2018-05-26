@@ -18,6 +18,7 @@ describe('POST /todo', () => {
 
     request(app)
         .post('/todo')
+        .set('x-auth', user_mock[0].tokens[0].token)
         .send({content})
         .expect(200)
         .expect((res) => {
@@ -39,6 +40,7 @@ describe('POST /todo', () => {
   it('Should not create invalid todo', (done) => {
     request(app)
       .post('/todo')
+      .set('x-auth', user_mock[0].tokens[0].token)
       .send({})
       .expect(400)
       .end((err, res) => {
@@ -58,9 +60,10 @@ describe("GET /todo", () => {
   it("Should return all todo", (done) => {
     request(app)
         .get('/todo')
+        .set('x-auth', user_mock[0].tokens[0].token)
         .expect(200)
         .expect((res) => {
-          expect(res.body.todos.length).toBe(2);
+          expect(res.body.todos.length).toBe(1);
         })
         .end(done);
   });
@@ -70,6 +73,7 @@ describe("GET /todo/:id", () => {
   it("Should return doc", (done) => {
       request(app)
         .get(`/todo/${todo_mock[0]._id}`)
+        .set('x-auth', user_mock[0].tokens[0].token)
         .expect(200)
         .expect((res) => {
           expect(res.body.todo.content).toBe(todo_mock[0].content);
@@ -77,9 +81,18 @@ describe("GET /todo/:id", () => {
         .end(done);
   });
 
+  it("Should not return doc created by other user", (done) => {
+      request(app)
+        .get(`/todo/${todo_mock[1]._id}`)
+        .set('x-auth', user_mock[0].tokens[0].token)
+        .expect(404)
+        .end(done);
+  });
+
   it("Should return 404 if id is not valid", (done) => {
     request(app)
         .get('/todo/78y4e1872r')
+        .set('x-auth', user_mock[0].tokens[0].token)
         .expect(404)
         .expect((res) => {
           expect(res.body.message).toBe("Invalid ID");
@@ -91,6 +104,7 @@ describe("GET /todo/:id", () => {
         let id = new ObjectId; // create new ObjectId
         request(app)
           .get(`/todo/${id}`)
+          .set('x-auth', user_mock[0].tokens[0].token)
           .expect(404)
           .expect((res) => {
             expect(res.body.message).toBe("todo not exists");
@@ -102,7 +116,8 @@ describe("GET /todo/:id", () => {
 describe("DELETE /todo/:id", () => {
   it('Should be return deleted message', (done) => {
      request(app)
-        .delete(`/todo/${todo_mock[0]._id}`)
+        .delete(`/todo/${todo_mock[1]._id}`)
+        .set('x-auth', user_mock[1].tokens[0].token)
         .expect(200)
         .expect((res) => {
           expect(res.body.message).toBe('Deleted Successfully.');
@@ -112,9 +127,25 @@ describe("DELETE /todo/:id", () => {
             return done(err);
           }
 
-          Todo.findByIdAndRemove(todo_mock[0].id).then((todo) => {
+          Todo.findById(todo_mock[1]._id).then((todo) => {
               expect(404);
               expect(todo).toBeNull();
+              done()
+          }).catch((e) => done(e));
+      });
+  });
+
+  it('Should not be return deleted message if try to delete other user todo', (done) => {
+     request(app)
+        .delete(`/todo/${todo_mock[0]._id}`)
+        .set('x-auth', user_mock[1].tokens[0].token)
+        .expect(404)
+        .end((err, res) => {
+          if (err){
+            return done(err);
+          }
+          Todo.findById(todo_mock[1]._id).then((todo) => {
+              expect(todo).toBeDefined();
               done()
           }).catch((e) => done(e));
       });
@@ -123,6 +154,7 @@ describe("DELETE /todo/:id", () => {
   it('Should be return 404 if id not valid', (done) => {
       request(app)
         .delete('/todo/12345678910')
+        .set('x-auth', user_mock[1].tokens[0].token)
         .expect(404)
         .expect((res) => {
           expect(res.body.message).toBe("Invalid ID");
@@ -134,6 +166,7 @@ describe("DELETE /todo/:id", () => {
       let id = new ObjectId;
       request(app)
         .delete(`/todo/${id}`)
+        .set('x-auth', user_mock[1].tokens[0].token)
         .expect(404)
         .expect((res) => {
           expect(res.body.message).toBe("todo not exists");
@@ -149,7 +182,8 @@ describe('PATCH /todo/:id', () => {
     it('Should return updated todo', (done) => {
 
        request(app)
-          .patch(`/todo/${todo_mock[1]._id}`)
+          .patch(`/todo/${todo_mock[0]._id}`)
+          .set('x-auth', user_mock[0].tokens[0].token)
           .send({content, complete})
           .expect(200)
           .expect((res) => {
@@ -160,9 +194,21 @@ describe('PATCH /todo/:id', () => {
           .end(done);
     });
 
+
+        it('Should not be return updated todo if update other user todo', (done) => {
+
+           request(app)
+              .patch(`/todo/${todo_mock[0]._id}`)
+              .set('x-auth', user_mock[1].tokens[0].token)
+              .send({content, complete})
+              .expect(404)
+              .end(done);
+      });
+
     it("Should be clear completeAt when todo is not complete", (done) => {
         request(app)
-            .patch(`/todo/${todo_mock[1]._id}`)
+            .patch(`/todo/${todo_mock[0]._id}`)
+            .set('x-auth', user_mock[0].tokens[0].token)
             .send({content, complete: false})
             .expect(200)
             .expect((res) => {
@@ -272,7 +318,7 @@ describe('PATCH /todo/:id', () => {
         }
 
         User.findById(user_mock[1]._id).then((user) => {
-          expect(user.tokens[0]).toMatchObject({
+          expect(user.tokens[1]).toMatchObject({
             access: 'auth',
             token: res.headers['x-auth']
           });
@@ -298,7 +344,7 @@ describe('PATCH /todo/:id', () => {
           }
 
           User.findById(user_mock[1]._id).then((user) => {
-            expect(user.tokens.length).toBe(0);
+            expect(user.tokens.length).toBe(1);
             done();
           }).catch((e) => done(e));
         });
